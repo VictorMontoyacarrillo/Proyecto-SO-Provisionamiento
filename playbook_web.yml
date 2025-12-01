@@ -1,0 +1,58 @@
+---
+- hosts: all
+  become: true
+  tasks:
+
+    - name: Actualizar repos
+      apt:
+        update_cache: yes
+
+    - name: Instalar paquetes necesarios
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+        state: present
+
+    - name: Agregar clave GPG de Docker
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Agregar repositorio Docker
+      apt_repository:
+        repo: "deb https://download.docker.com/linux/ubuntu focal stable"
+        state: present
+
+    - name: Actualizar repos nuevamente
+      apt:
+        update_cache: yes
+
+    - name: Instalar Docker
+      apt:
+        name: docker-ce
+        state: present
+
+    - name: Habilitar y arrancar Docker
+      systemd:
+        name: docker
+        enabled: yes
+        state: started
+
+    - name: Instalar Docker Compose plugin
+      apt:
+        name: docker-compose-plugin
+        state: present
+
+    - name: Copiar docker-compose.yml
+      copy:
+        src: docker-compose.yml
+        dest: /home/vagrant/docker-compose.yml
+        owner: vagrant
+        group: vagrant
+        mode: 0644
+
+    - name: Levantar servicios con Docker Compose
+      shell: docker compose -f /home/vagrant/docker-compose.yml up -d
