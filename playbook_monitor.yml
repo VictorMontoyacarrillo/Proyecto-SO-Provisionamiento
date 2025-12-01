@@ -1,0 +1,45 @@
+---
+- hosts: localhost
+  connection: local
+  become: yes
+  tasks:
+
+    - name: Actualizar apt
+      apt:
+        update_cache: yes
+
+    - name: Instalar docker y docker-compose (si falta)
+      apt:
+        name:
+          - docker.io
+          - docker-compose
+        state: present
+
+    - name: Crear directorio para monitor
+      file:
+        path: /home/vagrant/monitor
+        state: directory
+        owner: vagrant
+        group: vagrant
+        mode: '0755'
+
+    - name: Copiar prometheus.yml
+      copy:
+        src: prometheus.yml
+        dest: /home/vagrant/monitor/prometheus.yml
+        owner: vagrant
+        group: vagrant
+        mode: '0644'
+
+    - name: Copiar docker-compose.yml
+      copy:
+        src: docker-compose.yml
+        dest: /home/vagrant/monitor/docker-compose.yml
+        owner: vagrant
+        group: vagrant
+        mode: '0644'
+
+    - name: Levantar Prometheus y Grafana
+      community.docker.docker_compose:
+        project_src: /home/vagrant/monitor
+        state: present
