@@ -1,58 +1,35 @@
 ---
-- hosts: all
-  become: true
+- hosts: web
+  become: yes
   tasks:
 
-    - name: Actualizar repos
+    - name: Actualizar repositorios
       apt:
         update_cache: yes
 
-    - name: Instalar paquetes necesarios
+    - name: Instalar Nginx
       apt:
-        name:
-          - apt-transport-https
-          - ca-certificates
-          - curl
-          - software-properties-common
+        name: nginx
         state: present
 
-    - name: Agregar clave GPG de Docker
-      apt_key:
-        url: https://download.docker.com/linux/ubuntu/gpg
-        state: present
+    - name: Crear carpeta para contenido web
+      file:
+        path: /var/www/html
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: '0755'
 
-    - name: Agregar repositorio Docker
-      apt_repository:
-        repo: "deb https://download.docker.com/linux/ubuntu focal stable"
-        state: present
-
-    - name: Actualizar repos nuevamente
-      apt:
-        update_cache: yes
-
-    - name: Instalar Docker
-      apt:
-        name: docker-ce
-        state: present
-
-    - name: Habilitar y arrancar Docker
-      systemd:
-        name: docker
-        enabled: yes
-        state: started
-
-    - name: Instalar Docker Compose plugin
-      apt:
-        name: docker-compose-plugin
-        state: present
-
-    - name: Copiar docker-compose.yml
+    - name: Copiar sitio web estático
       copy:
-        src: docker-compose.yml
-        dest: /home/vagrant/docker-compose.yml
-        owner: vagrant
-        group: vagrant
-        mode: 0644
+        src: web_content/
+        dest: /var/www/html/
+        owner: www-data
+        group: www-data
+        mode: '0644'
 
-    - name: Levantar servicios con Docker Compose
-      shell: docker compose -f /home/vagrant/docker-compose.yml up -d
+    - name: Habilitar Nginx
+      service:
+        name: nginx
+        state: started
+        enabled: yes
